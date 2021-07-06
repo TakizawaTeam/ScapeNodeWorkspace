@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ja" style="height:100%;">
+<head>
+    <meta charset="UTF-8">
+    <title>配信環境テスト</title>
+</head>
+<body style="height:100%;margin:0px;">
+  <div id="speech-dummy" style="display:none;"></div>
+  <div id="content">
+    <div id="voicelog" class="shadow_div"></div>
+    <div id="subtitles"></div>
+  </div>
+
+  <canvas id="canvas" width="32px" height="32px"></canvas>
+
+  <script>
+  const voicelog = document.getElementById('voicelog');
+  const dummy = document.body.querySelector("#speech-dummy");
+  const speech = new webkitSpeechRecognition();
+  speech.lang = 'ja-JP';
+  speech.start();
+  speech.onresult = function(e) {
+    speech.stop();
+    if(e.results[0].isFinal){
+      var autotext =  e.results[0][0].transcript;
+      voicelog.innerHTML += `<div> ${autotext} </div>`;
+      message_pop(autotext);
+      subtitle_pop(autotext);
+      dummy.click();
+     }
+  };
+  speech.onend = ()=>speech.start();
+
+  vocalize = text=>{
+    uttr = new SpeechSynthesisUtterance(text);
+    uttr.voice = speechSynthesis.getVoices().find(function(voice){
+      return voice.name === 'Kyoko';
+    });
+    speechSynthesis.speak(uttr);
+  };
+  dummy.addEventListener("click",function(e){
+    vocalize(message);
+  });
+
+  message = "";
+  message_display = 0;
+  message_pop = _message=>{
+    message_display = 100;
+    message = _message;
+  };
+  subtitle_pop = _message=>{
+    subtitles = document.querySelector("#subtitles");
+    subtitles.innerText = _message;
+    subtitles.style.display = "block";
+    setTimeout(()=>{
+      subtitles.style.display = "none";
+      subtitles.innerText = "";
+    }, 1000*5);
+  };
+
+
+  //何文字目で改行するかを取得
+  SliceCount = (string, kaigyou=8)=>{
+      var count = 0;
+      var byte = kaigyou;　
+      for (i = 0; byte > 0; i++){
+          if(typeof string[i] === "undefined") return -1;
+          if(string[i].match(/[ -~]/)){
+              byte -= 1; //半角の場合
+          }else{
+              byte -= 2; //全角の場合
+          }
+          count++;
+      }
+      //byteが０になった時点で何文字カウントされたかを戻り値として返す
+      return count;
+  }
+  ByteSplit = (text, kaigyou=8)=>{
+      result = [];
+      while(text.length>0){
+          slice_count = SliceCount(text, kaigyou);
+          if(slice_count != -1){
+            result.push( text.slice(0,slice_count) );
+            text = text.slice(slice_count);
+          }else{
+            result.push( text );
+            text = "";
+          }
+      }
+      return result;
+  };
+
+  let images = {};
+  const images_url = {
+    "tiruno": {
+      "front": [
+          "https://cdn-ak.f.st-hatena.com/images/fotolife/s/surume_Reflection/20160930/20160930002519.png",
+          "https://cdn-ak.f.st-hatena.com/images/fotolife/s/surume_Reflection/20161001/20161001134715.png",
+      ],
+      "left": [
+          "https://cdn-ak.f.st-hatena.com/images/fotolife/s/surume_Reflection/20160929/20160929231144.png",
+          "https://cdn-ak.f.st-hatena.com/images/fotolife/s/surume_Reflection/20160929/20160929231146.png",
+      ],
+      "right": [
+          "https://cdn-ak.f.st-hatena.com/images/fotolife/s/surume_Reflection/20160929/20160929231128.png",
+          "https://cdn-ak.f.st-hatena.com/images/fotolife/s/surume_Reflection/20160929/20160929231120.png",
+      ],
+      "back": [
+          "https://cdn-ak.f.st-hatena.com/images/fotolife/s/surume_Reflection/20210625/20210625232223.png",
+          "https://cdn-ak.f.st-hatena.com/images/fotolife/s/surume_Reflection/20210625/20210625232244.png",
+      ],
+    }
+  };
+  function getImage(){
+    for(split_name in images_url){
+      images[split_name] = {};
+      for(animation_name in images_url[split_name]){
+        images[split_name][animation_name] = [];
+
+        //画像追加
+        for(var i=0;i<images_url[split_name][animation_name].length;i++){
+          images[split_name][animation_name].push( new Image() );
+          var length = images[split_name][animation_name].length-1;
+          images[split_name][animation_name][length].src = images_url[split_name][animation_name][length];
+        }
+      }
+    }
+  }
+
+  let key = {};
+  window.addEventListener('keydown', key_down_e, true);   //キーアップ
+  function key_down_e(event){
+      var code = event.keyCode;
+      switch (code) {
+          case 87: key["w"] = 1; break;//W
+          case 83: key["s"] = 1; break;//S
+          case 65: key["a"] = 1; break;//A
+          case 68: key["d"] = 1; break;//D
+      }
+  }
+  window.addEventListener('keyup', key_up_e, true);   //キーダウン
+  function key_up_e(event){
+      var code = event.keyCode;
+      switch (code) {
+          case 87: key["w"] = 0; break;//W
+          case 83: key["s"] = 0; break;//S
+          case 65: key["a"] = 0; break;//A
+          case 68: key["d"] = 0; break;//D
+      }
+  }
+
+  let spread = [
+    document.body.clientWidth,
+    document.body.clientHeight
+  ]
+  const canvas = document.getElementById('canvas');
+  canvas.setAttribute("width", `${spread[0]}px`);
+  canvas.setAttribute("height", `${spread[1]}px`);
+  const context = canvas.getContext("2d");
+
+  function drawsq(x,y,w,h,r,color1,color2){
+    context.beginPath();
+    context.lineWidth = 1;
+    context.strokeStyle = color1;
+    context.fillStyle = color2;
+    context.moveTo(x,y + r);
+    context.arc(x+r,y+h-r,r,Math.PI,Math.PI*0.5,true);
+    context.arc(x+w-r,y+h-r,r,Math.PI*0.5,0,1);
+    context.arc(x+w-r,y+r,r,0,Math.PI*1.5,1);
+    context.arc(x+r,y+r,r,Math.PI*1.5,Math.PI,1);
+    context.closePath();
+    context.stroke();
+    context.fill();
+  }
+  function drawln(points=[], color="#000"){
+    context.strokeStyle = color;
+    context.beginPath();
+    points.map(point=>{
+      context.lineTo(point.x, point.y);
+    });
+    context.closePath();
+    context.stroke();
+  }
+  //テキストを描画
+  function drawText(point, text, byte=16, color="#000", option={line_height:2, bold:false, size: 10, type:"'ＭＳ 明朝'"}){
+    textLine = ByteSplit(text, byte);
+    context.fillStyle = color;
+    context.font = `${option.bold ? "bold" : ""} ${option.size}px ${option.type}`;
+    textLine.map((line,index)=>{
+      context.fillText(line, point.x, point.y + (index*(option.size+option.line_height)) );
+    });
+  }
+
+  // オブジェクト描画
+  function drawMessage(text, byte=17){
+    byte_split = ByteSplit(text, byte);
+    height = byte_split.length>=4 ? 10+(byte_split.length*12) : 50;
+    drawsq(point.x-50+32+0.5, point.y-height-10+0.5, 100, height, 10, "#000", "#FFF");
+    drawText({
+      x: point.x-50+32+0.5+5,
+      y: point.y-height-10+0.5+10+5
+    }, text, byte);
+  }
+
+  getImage();
+  let image = images["tiruno"]["front"];
+  let point = {x: canvas.width*0.95-32, y: canvas.height*0.15-32};
+
+  let frame_count = 0;
+  function frame(){
+    if(frame_count<9999*99){frame_count++;}else{frame_count=0;}
+
+    //背景描画
+    context.fillStyle = "#0F0";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    drawln([{
+      x: canvas.width/2,
+      y: 0
+    },{
+      x: canvas.width/2,
+      y: canvas.height
+    }], "#888");
+    drawln([{
+      x: 0,
+      y: canvas.height/2
+    },{
+      x: canvas.width,
+      y: canvas.height/2
+    }], "#888");
+
+    // context.arc(canvas.width/2-16, canvas.height/2-16, 5, 0, Math.PI*2, false);
+
+    //描画画像を取得
+    speed = 8
+    image = images["tiruno"]["front"][parseInt(frame_count/10)%images["tiruno"]["front"].length];
+    if(key["a"]==1){
+        image = images["tiruno"]["right"][parseInt(frame_count/5)%images["tiruno"]["right"].length];
+        point.x-=speed;
+    }else if(key["d"]==1){
+        image = images["tiruno"]["left"][parseInt(frame_count/5)%images["tiruno"]["left"].length];
+        point.x+=speed;
+    }else if(key["w"]==1){
+        image = images["tiruno"]["back"][parseInt(frame_count/5)%images["tiruno"]["back"].length];
+        point.y-=speed;
+    }else if(key["s"]==1){
+        image = images["tiruno"]["front"][parseInt(frame_count/5)%images["tiruno"]["front"].length];
+        point.y+=speed;
+    }
+
+    size = 64
+    if(point.x<-size) point.x = spread[0];
+    if(point.x>spread[0]) point.x = -size;
+    if(point.y<-size) point.y = spread[1];
+    if(point.y>spread[1]) point.y = -size;
+
+    context.drawImage(image, point.x+0.5, point.y+0.5, size, size);
+    if(!!message_display){
+      drawMessage(`${message}!`);
+      message_display -= 1;
+    }
+
+    context.fillStyle = "#000";
+    context.font = "bold 10px 'ＭＳ 明朝'";
+    context.fillText("frame:"+frame_count, 0, 10);
+  }
+  setInterval(frame, 60);
+  </script>
+
+  <style>
+  .shadow_div{
+    box-shadow: 1px 1px 5px 1px #000;
+    overflow:hidden;
+    overflow-y:scroll;
+  }
+
+  #canvas{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: 0;
+  }
+  #content{
+    width: calc(100% - 20px);
+    height: calc(100% - 20px);
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: 9;
+    padding: 10px;
+  }
+  #voicelog{
+    display: none;
+    width: 280px;
+    height: 480px;
+  }
+  #subtitles{
+    color: #FFF;
+    display: none;
+    width: 100%;
+    padding: 0px 0px;
+    font-size: 32px;
+    position: relative;
+    left: 0px;
+    top: 90%;
+    z-index: 9;
+    text-align: center;
+    overflow-wrap: break-word;
+    font-weight: bold;
+    text-shadow:
+      1px 0 0 black,
+      0 1px 0 black,
+      -1px 0 0 black,
+      0 -1px 0 black;
+  }
+  </style>
+<body>
+<html>

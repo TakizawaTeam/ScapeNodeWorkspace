@@ -323,7 +323,7 @@
       </div>`;
       dom.insertAdjacentHTML(pos, tarminal_str);
       const tarminal = dom.lastElementChild;
-      tarminal.querySelector(".tarm-url").value = "ws://localhost:5001/repl";
+      tarminal.querySelector(".tarm-url").value = `ws://${this.location.host}:5001/repl`;
       setTerminalUI(tarminal);
       return tarminal;
     };

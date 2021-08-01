@@ -1,0 +1,43 @@
+/*
+* REPL Server Connection
+*/
+
+const COMMAND_LOG = true; // ログ出力
+const bgf_color = (bg='white',f='black')=>`color:${f};background-color:${bg};`;
+const output_log = (target=null, style=bgf_color("#335","#DDE"))=>{
+  if(typeof target==='object') target = JSON.stringify(target);
+  console.log(`%c${target}`, style);
+};
+
+const str_var = str=>(new Function("return " + str))(); // ただの文字列をJSに変換
+const remove_prompt = m=>{ // プロンプト用の出力削除
+  m = m.split("\n"); m.pop(); m = m.join("\n");
+  return str_var(m);
+};
+
+const getReplServer = async (host, open_callback, close_callback=()=>{})=>{
+  server = new WebSocket(`ws://${host}/repl`);
+  server.ask = async q=>{
+    if(server.readyState != 1) return null;
+    server.send(q);
+    if(COMMAND_LOG) output_log(`$ ${q}`);
+    return await new Promise((res,rej)=>{
+      server.onmessage = function(e){
+        m = remove_prompt(e.data);
+        if(typeof m!=='undefined'){
+          if(COMMAND_LOG) output_log(m);
+          res(m);
+        }
+      };
+    });
+  };
+  server.onopen = async function(e){
+    console.log(`ws://${host}/repl connected!`);
+    await open_callback(server.ask);
+  };
+  server.onclose = async function(e){
+    console.log(`ws://${host}/repl disconnected!`);
+    await close_callback();
+  };
+  return server;
+};

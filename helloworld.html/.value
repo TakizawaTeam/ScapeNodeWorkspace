@@ -87,13 +87,14 @@
     }
     .tarm-url{
       width:calc(80% - 17px);
+      border: solid 1px;
+      padding: 0px;
       outline:0;
-      height:17px;
+      height:15px;
       color:#555;
-      border-size:1px;
     }
     .tarm-btn{
-      width:20%;
+      width:calc(20% - 2px);;
       border:none;
       height:17px;
       padding:0px;
@@ -110,7 +111,7 @@
     }
     .tarm-menu{
       display: inline-block;
-      vertical-align: top;
+      vertical-align: middle;
       width: 15px;
       height: 15px;
       background-color: #000;
@@ -313,7 +314,7 @@
     createTarminal = (dom, pos='beforeend')=>{
       const tarminal_str = `<div class="tarminal">
         <div class="tarm-header"><!--
-          --><div class="tarm-menu drag_area">1</div><!--
+          --><div class="tarm-menu drag_area"></div><!--
           --><input type="text" class="tarm-url"/><!--
           --><input type="button" value="CONNECT" class="tarm-btn"/>
         </div>
@@ -324,7 +325,7 @@
       </div>`;
       dom.insertAdjacentHTML(pos, tarminal_str);
       const tarminal = dom.lastElementChild;
-      tarminal.querySelector(".tarm-url").value = `ws://${this.location.host}:5001/repl`;
+      tarminal.querySelector(".tarm-url").value = `ws://${this.location.host}/repl`;
       setTerminalUI(tarminal);
       return tarminal;
     };

@@ -6,7 +6,7 @@
 </head>
 <body>
   <div>Hello!</div>
-  <div class="main">
+  <div id="main">
     <div class="header">
       <div class="title">コレクション管理</div>
     </div>
@@ -20,10 +20,32 @@
   window.onload = async function(){
     const host = this.location.host;
     const server = await getReplServer(host, async ask=>{
+      const importNode = async (path, args=null, dom=document.querySelector("#main"))=>{ // NodeのPathから取り込み
+        if(!dom) return null;
+        const root = path.split("/").shift();
+        const _path = path.split("/").slice(1).join("/");
+        console.log(path, _path);
+        await ask(`await checkout("${root}");`);
+        await ask(`await change("${_path}");`);
+        const el_str = await ask(`await catenate();`);
+        dom.insertAdjacentHTML('beforeend', el_str);
+
+        const import_dom = dom.lastElementChild;
+        import_dom.var = {args: args}; //読み込み時のパラメータ
+        for(let script of import_dom.querySelectorAll("script")){ // innerHTMLでは実行されない為js再配置
+          var new_script = document.createElement('script');
+          new_script.innerHTML = script.innerHTML;
+          script.parentElement.insertBefore(new_script, script);
+          script.parentElement.removeChild(script);
+        }
+        return !import_dom? false: import_dom;
+      };
+
       await ask(`await checkout("Database");`);
       await ask(`await change("user/seresonn_no9@yahoo.co.jp/echo");`);
       console.log( await ask(`await catenate();`) );
-      server.close();
+      await importNode("workspace/index.html/terminal.html");
+      // server.close();
     });
   };
   </script>

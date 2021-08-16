@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <head>
-  <title>コレクション管理</title>
+  <title>ノード管理</title>
   <meta charset="utf-8"/>
   <script src="index.html/index.js"></script>
 </head>
 <body>
-  <div>Hello!</div>
   <div id="main">
     <div class="header">
-      <div class="title">コレクション管理</div>
+      <div class="title">ノード管理</div>
     </div>
     <div class="content">
-      <div class="title">メインコンテンツ</div>
+      <div class="title">コレクション一覧</div>
+      <div class="nodes"></div>
     </div>
     <div class="footer">-</div>
   </div>
@@ -24,8 +24,7 @@
         if(!dom) return null;
         const root = path.split("/").shift();
         const _path = path.split("/").slice(1).join("/");
-        console.log(path, _path);
-        await ask(`await checkout("${root}");`);
+        await ask(`await checkin("${root}");`);
         await ask(`await change("${_path}");`);
         const el_str = await ask(`await catenate();`);
         dom.insertAdjacentHTML('beforeend', el_str);
@@ -41,11 +40,25 @@
         return !import_dom? false: import_dom;
       };
 
-      await ask(`await checkout("Database");`);
-      await ask(`await change("user/seresonn_no9@yahoo.co.jp/echo");`);
-      console.log( await ask(`await catenate();`) );
+
+      const nodes_view = document.querySelector("#main .content .nodes");
+      const collection_keys = await ask(`await list();`);
+      for await (key of collection_keys){
+        await importNode("workspace/index.html/collection.html", {key: key}, nodes_view);
+      }
+
+      // await ask(`await checkin("Database");`);
+      // const nodes_view = document.querySelector("#main .content .nodes");
+      // const node_keys = await ask(`await child();`);
+      // for await (key of node_keys){
+      //   await importNode("workspace/index.html/node.html", {key: key}, nodes_view);
+      // }
+
+      // await ask(`await change("user/seresonn_no9@yahoo.co.jp/echo");`);
+      // console.log( await ask(`await catenate();`) );
+
       await importNode("workspace/index.html/terminal.html");
-      // server.close();
+      server.close();
     });
   };
   </script>

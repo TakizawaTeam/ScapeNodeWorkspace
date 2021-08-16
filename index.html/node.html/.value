@@ -1,0 +1,10 @@
+<div class="Node">
+  <div class="title"></div>
+  <script>
+  (async function(){
+    const component = document.querySelector(".Node:last-child");
+    const args = component.var.args;
+    component.querySelector(".title").innerText = args.key;
+  })();
+  </script>
+</div>

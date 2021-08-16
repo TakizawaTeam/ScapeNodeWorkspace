@@ -1,0 +1,10 @@
+<div class="Collection">
+  <div class="title"></div>
+  <script>
+  (async function(){
+    const component = document.querySelector(".Collection:last-child");
+    const args = component.var.args;
+    component.querySelector(".title").innerText = args.key;
+  })();
+  </script>
+</div>

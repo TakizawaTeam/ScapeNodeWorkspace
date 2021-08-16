@@ -8,7 +8,7 @@
 
   <script>
   const connect = async ask=>{
-    await ask(`await checkout("Database");`);
+    await ask(`await checkin("Database");`);
     await ask(`await change("user/seresonn_no9@yahoo.co.jp/echo");`);
     document.querySelector("#main").innerText = await ask(`await catenate();`);
   };

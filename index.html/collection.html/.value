@@ -1,13 +1,31 @@
 <div class="Collection">
-  <div class="title"></div>
-  <script>
-  (async function(){
-    const component = document.querySelector(".Collection:last-child");
-    const args = component.var.args;
+  <style>
+  .Collection .content{ padding-left: 10px; }
+  </style>
 
+  <div class="title"></div>
+  <div class="content"></div>
+
+  <script>
+  (async ()=>{
+    const component = document.currentScript.parentElement;
+    const args = component.var.args;
     component.querySelector(".title").innerText = args.key;
+
     component.addEventListener('click', async function(e){
-      console.log(`click.${e.currentTarget.var.args.key}.collection!`);
+      const content_view = component.querySelector(".content");
+      content_view.innerHTML = '';
+
+      const insider = await server.ask(`await checkin("${args.key}");`);
+      if(!!insider){
+        const node_keys = await server.ask(`await child();`);
+        for await (let key of node_keys){
+          await server.importHtml("workspace/index.html/node.html", {key: key}, content_view);
+        }
+      }else{
+        alert(`コレクション「${args.key}」が削除されました。`);
+        component.remove();
+      }
     });
   })();
   </script>

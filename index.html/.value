@@ -24,19 +24,20 @@
   </div>
 
   <script>
-  let server = null; // なぜかbind出来ないので全部serverを付けて対応
+  let server = null;
 
-  (async function(){
-    server = await getReplServer(location.host);
+  (async ()=>{
+    server = await getReplServer(location.host); // なぜか`bind`出来ないので一旦`server.`を付けて対応
     server.onopen = async function(e){
       console.log(`ws://${location.host}/repl connected!`);
       const nodes_view = document.querySelector("#main .content .nodes");
       const collection_keys = await server.ask(`await list();`);
-      for await (key of collection_keys){
+      for await (let key of collection_keys){
         await server.importHtml("workspace/index.html/collection.html", {key: key}, nodes_view);
       }
 
       await server.importHtml("workspace/index.html/terminal.html");
+      // server.close();
     };
     server.onclose = async function(e){
       console.log(`ws://${location.host}/repl disconnected!`);

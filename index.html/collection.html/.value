@@ -4,7 +4,11 @@
   (async function(){
     const component = document.querySelector(".Collection:last-child");
     const args = component.var.args;
+
     component.querySelector(".title").innerText = args.key;
+    component.addEventListener('click', async function(e){
+      console.log(`click.${e.currentTarget.var.args.key}.collection!`);
+    });
   })();
   </script>
 </div>

@@ -5,62 +5,43 @@
   <script src="index.html/index.js"></script>
 </head>
 <body>
+  <style>
+  .content{ padding-left: 5px; }
+  .content .path{ padding-left: 5px; }
+  .content .nodes{ padding-left: 5px; }
+  </style>
+
   <div id="main">
     <div class="header">
       <div class="title">ノード管理</div>
     </div>
     <div class="content">
       <div class="title">コレクション一覧</div>
+      <input class="path" type="text" value="/"/>
       <div class="nodes"></div>
     </div>
     <div class="footer">-</div>
   </div>
 
   <script>
-  window.onload = async function(){
-    const host = this.location.host;
-    const server = await getReplServer(host, async ask=>{
-      const importNode = async (path, args=null, dom=document.querySelector("#main"))=>{ // NodeのPathから取り込み
-        if(!dom) return null;
-        const root = path.split("/").shift();
-        const _path = path.split("/").slice(1).join("/");
-        await ask(`await checkin("${root}");`);
-        await ask(`await change("${_path}");`);
-        const el_str = await ask(`await catenate();`);
-        dom.insertAdjacentHTML('beforeend', el_str);
+  let server = null; // なぜかbind出来ないので全部serverを付けて対応
 
-        const import_dom = dom.lastElementChild;
-        import_dom.var = {args: args}; //読み込み時のパラメータ
-        for(let script of import_dom.querySelectorAll("script")){ // innerHTMLでは実行されない為js再配置
-          var new_script = document.createElement('script');
-          new_script.innerHTML = script.innerHTML;
-          script.parentElement.insertBefore(new_script, script);
-          script.parentElement.removeChild(script);
-        }
-        return !import_dom? false: import_dom;
-      };
-
-
+  (async function(){
+    server = await getReplServer(location.host);
+    server.onopen = async function(e){
+      console.log(`ws://${location.host}/repl connected!`);
       const nodes_view = document.querySelector("#main .content .nodes");
-      const collection_keys = await ask(`await list();`);
+      const collection_keys = await server.ask(`await list();`);
       for await (key of collection_keys){
-        await importNode("workspace/index.html/collection.html", {key: key}, nodes_view);
+        await server.importHtml("workspace/index.html/collection.html", {key: key}, nodes_view);
       }
 
-      // await ask(`await checkin("Database");`);
-      // const nodes_view = document.querySelector("#main .content .nodes");
-      // const node_keys = await ask(`await child();`);
-      // for await (key of node_keys){
-      //   await importNode("workspace/index.html/node.html", {key: key}, nodes_view);
-      // }
-
-      // await ask(`await change("user/seresonn_no9@yahoo.co.jp/echo");`);
-      // console.log( await ask(`await catenate();`) );
-
-      await importNode("workspace/index.html/terminal.html");
-      server.close();
-    });
-  };
+      await server.importHtml("workspace/index.html/terminal.html");
+    };
+    server.onclose = async function(e){
+      console.log(`ws://${location.host}/repl disconnected!`);
+    };
+  })();
   </script>
 </body>
 </html>

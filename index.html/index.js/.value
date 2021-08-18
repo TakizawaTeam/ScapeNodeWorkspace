@@ -15,10 +15,33 @@ const remove_prompt = m=>{ // プロンプト用の出力削除
   return str_var(m);
 };
 
-const getReplServer = async (host, open_callback, close_callback=()=>{})=>{
+const importHtml = server=>{ // ScapeNodeのhtmlクライアント
+  return async (path, args=null, dom=document.querySelector("#main"))=>{ // NodeのPathから取り込み
+    if(!dom) return null;
+    const root = path.split("/").shift();
+    const _path = path.split("/").slice(1).join("/");
+    await server.ask(`await checkin("${root}");`);
+    await server.ask(`await change("${_path}");`);
+    const el_str = await server.ask(`await catenate();`);
+    dom.insertAdjacentHTML('beforeend', el_str);
+
+    const import_dom = dom.lastElementChild;
+    import_dom.var = {args: args}; //読み込み時のパラメータ
+    for(let script of import_dom.querySelectorAll("script")){ // innerHTMLでは実行されない為js再配置
+      var new_script = document.createElement('script');
+      new_script.innerHTML = script.innerHTML;
+      script.parentElement.insertBefore(new_script, script);
+      script.parentElement.removeChild(script);
+    }
+    return !import_dom? false: import_dom;
+  };
+};
+
+const getReplServer = async host=>{
   server = new WebSocket(`ws://${host}/repl`);
+  server.connect = host=>{ server = new WebSocket(`ws://${host}/repl`); };
   server.ask = async q=>{
-    if(server.readyState != 1) return null;
+    if(server.readyState != 1) server.connect(host);
     server.send(q);
     if(COMMAND_LOG) output_log(`$ ${q}`);
     return await new Promise((res,rej)=>{
@@ -31,13 +54,6 @@ const getReplServer = async (host, open_callback, close_callback=()=>{})=>{
       };
     });
   };
-  server.onopen = async function(e){
-    console.log(`ws://${host}/repl connected!`);
-    await open_callback(server.ask);
-  };
-  server.onclose = async function(e){
-    console.log(`ws://${host}/repl disconnected!`);
-    await close_callback();
-  };
+  server.importHtml = importHtml(server);
   return server;
 };

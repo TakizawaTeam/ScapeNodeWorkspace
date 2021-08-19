@@ -1,6 +1,6 @@
 <div class="Node">
   <style>
-  .Node .content{ padding-left: 10px; }
+  .Node > .content{ padding-left: 10px; }
   </style>
 
   <div class="title"></div>
@@ -10,7 +10,22 @@
   (async ()=>{
     const component = document.currentScript.parentElement;
     const args = component.var.args;
-    component.querySelector(".title").innerText = args.key;
+    component.querySelector(".title").innerText = args.key.split("/").pop();
+    component.dataset.path = args.key;
+
+    component.querySelector(".title").addEventListener('click', async function(e){
+      const content_view = component.querySelector(".content");
+      content_view.innerHTML = '';
+
+      const collection_key = component.closest(".Collection").var.args.key;
+      if(!!await server.ask(`checkin("${collection_key}")`)){
+        await server.ask(`change("${args.key}");`);
+        const node_keys = await server.ask(`child();`);
+        for await (let key of node_keys){
+          await server.importHtml("workspace/index.html/node.html", {key: `${args.key}/${key}`}, content_view);
+        }
+      }
+    });
   })();
   </script>
 </div>

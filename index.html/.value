@@ -31,12 +31,13 @@
     server.onopen = async function(e){
       console.log(`ws://${location.host}/repl connected!`);
       const nodes_view = document.querySelector("#main .content .nodes");
-      const collection_keys = await server.ask(`await list();`);
+      const collection_keys = await server.ask(`list();`);
       for await (let key of collection_keys){
         await server.importHtml("workspace/index.html/collection.html", {key: key}, nodes_view);
       }
 
-      await server.importHtml("workspace/index.html/terminal.html");
+      const content = document.querySelector("#main .content");
+      await server.importHtml("workspace/index.html/terminal.html", {}, content);
       // server.close();
     };
     server.onclose = async function(e){

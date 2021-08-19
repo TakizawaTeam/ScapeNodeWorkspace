@@ -20,9 +20,9 @@ const importHtml = server=>{ // ScapeNodeのhtmlクライアント
     if(!dom) return null;
     const root = path.split("/").shift();
     const _path = path.split("/").slice(1).join("/");
-    await server.ask(`await checkin("${root}");`);
-    await server.ask(`await change("${_path}");`);
-    const el_str = await server.ask(`await catenate();`);
+    await server.ask(`checkin("${root}");`);
+    await server.ask(`change("${_path}");`);
+    const el_str = await server.ask(`catenate();`);
     dom.insertAdjacentHTML('beforeend', el_str);
 
     const import_dom = dom.lastElementChild;

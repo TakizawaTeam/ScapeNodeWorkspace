@@ -1,6 +1,7 @@
 <div class="Collection">
   <style>
-  .Collection .content{ padding-left: 10px; }
+  .Collection > .title{ background-color: rgba(0,0,0,0.1); }
+  .Collection > .content{ padding-left: 10px; }
   </style>
 
   <div class="title"></div>
@@ -11,14 +12,15 @@
     const component = document.currentScript.parentElement;
     const args = component.var.args;
     component.querySelector(".title").innerText = args.key;
+    component.dataset.path = args.key;
 
-    component.addEventListener('click', async function(e){
+    component.querySelector(".title").addEventListener('click', async function(e){
       const content_view = component.querySelector(".content");
       content_view.innerHTML = '';
 
-      const insider = await server.ask(`await checkin("${args.key}");`);
+      const insider = await server.ask(`checkin("${args.key}");`);
       if(!!insider){
-        const node_keys = await server.ask(`await child();`);
+        const node_keys = await server.ask(`child();`);
         for await (let key of node_keys){
           await server.importHtml("workspace/index.html/node.html", {key: key}, content_view);
         }
